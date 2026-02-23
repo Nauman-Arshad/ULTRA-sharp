@@ -1,0 +1,254 @@
+<%= form_with model: @order, class: "order-form order-form--v2" do |f| %>
+  <% if @order.errors.any? %>
+    <div class="form-errors">
+      <ul>
+        <% @order.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <%= f.hidden_field :order_number %>
+  <%= f.hidden_field :order_status, value: @order.order_status.presence || Order::DEFAULT_ORDER_STATUS %>
+
+  <div class="order-form__section">
+    <h3 class="order-form__section-title">Customer</h3>
+    <div class="form-group form-group--party-combo">
+      <label class="form-label" for="party_search">Party</label>
+      <div class="party-combo" id="party_combo">
+        <%= f.hidden_field :party_id, id: "order_party_id" %>
+        <input type="text" id="party_search" class="form-input party-combo__input" placeholder="Search by name or phone..." autocomplete="off" value="<%= @order.party&.party_name %>">
+        <span class="party-combo__arrow" aria-hidden="true"></span>
+        <div class="party-dropdown" id="party_dropdown" role="listbox" aria-hidden="true"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="order-form__section order-form__section--items">
+    <div class="order-form__section-head">
+      <h3 class="order-form__section-title">Items</h3>
+      <button type="button" class="btn-outline btn-add-line" id="add_order_item">+ Add item</button>
+    </div>
+    <div class="order-items-table-wrap">
+      <table class="order-items-table">
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th class="col-qty">Quantity</th>
+            <th class="col-price">Unit price (PKR)</th>
+            <th class="col-total">Line total (PKR)</th>
+            <th class="col-action"></th>
+          </tr>
+        </thead>
+        <tbody id="order_items_body">
+          <%= f.fields_for :order_items do |item_f| %>
+            <tr class="order-item-row" data-index="<%= item_f.index %>">
+              <td>
+                <%= item_f.hidden_field :id if item_f.object.persisted? %>
+                <%= item_f.select :product_id, options_for_select((@products || []).map { |p| [p.name, p.id, { data: { unit_price: p.unit_price.to_f, name: p.name } }] }, item_f.object.product_id), { prompt: "Select product" }, class: "form-select form-select--product-row" %>
+                <%= item_f.hidden_field :product_name, class: "input-product-name" %>
+              </td>
+              <td class="col-qty">
+                <%= item_f.number_field :quantity, class: "form-input input-qty", placeholder: "0", step: :any, min: 0 %>
+              </td>
+              <td class="col-price">
+                <span class="line-unit-price">—</span>
+                <%= item_f.hidden_field :unit_price, class: "input-unit-price" %>
+              </td>
+              <td class="col-total">
+                <span class="line-total">—</span>
+              </td>
+              <td class="col-action">
+                <%= item_f.hidden_field :_destroy, class: "input-destroy" %>
+                <button type="button" class="btn-remove-line" title="Remove line">×</button>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+    <div class="order-form__grand-total">
+      <span class="order-form__grand-total-label">Order total (PKR)</span>
+      <span class="order-form__grand-total-value" id="grand_total">—</span>
+    </div>
+  </div>
+
+  <div class="order-form__section">
+    <h3 class="order-form__section-title">Payment</h3>
+    <div class="form-row">
+      <div class="form-group">
+        <%= f.label :advance_payment, "Advance payment (PKR)" %>
+        <%= f.number_field :advance_payment, class: "form-input", placeholder: "0.00", step: 0.01, value: @order.advance_payment, min: 0 %>
+      </div>
+      <div class="form-group">
+        <%= f.label :order_date, "Order date" %>
+        <%= f.date_field :order_date, class: "form-input" %>
+      </div>
+    </div>
+  </div>
+
+  <div class="order-form__actions">
+    <%= f.submit @order.persisted? ? "Update order" : "Create order", class: "btn-primary btn-primary--submit" %>
+    <%= link_to "Cancel", @order.persisted? ? order_path(@order) : root_path(tab: "orders"), class: "btn-secondary" %>
+  </div>
+<% end %>
+
+<script>
+(function() {
+  var form = document.querySelector('.order-form--v2');
+  if (!form) return;
+
+  var partySearch = form.querySelector('#party_search');
+  var partyIdInput = form.querySelector('#order_party_id');
+  var partyDropdown = form.querySelector('#party_dropdown');
+  var tbody = form.querySelector('#order_items_body');
+  var addBtn = form.querySelector('#add_order_item');
+  var productsJson = <%= raw (@products || []).map { |p| { id: p.id, name: p.name, unit_price: p.unit_price.to_f } }.to_json %>;
+  var partiesJson = <%= raw @parties.map { |p| { id: p.id, name: p.party_name.to_s, phone: p.phone.to_s } }.to_json %>;
+
+  function showPartyDropdown() {
+    var q = (partySearch && partySearch.value || '').toLowerCase().trim();
+    var list = partiesJson.filter(function(p) {
+      if (!q) return true;
+      return p.name.toLowerCase().indexOf(q) !== -1 || (p.phone && p.phone.toLowerCase().indexOf(q) !== -1);
+    });
+    if (!partyDropdown) return;
+    partyDropdown.innerHTML = list.slice(0, 8).map(function(p) {
+      return '<div class="party-dropdown__item" role="option" data-id="' + p.id + '" data-name="' + (p.name || '').replace(/"/g, '&quot;') + '">' + (p.name || '—') + (p.phone ? ' <span class="party-dropdown__meta">' + p.phone + '</span>' : '') + '</div>';
+    }).join('') || '<div class="party-dropdown__empty">No matches</div>';
+    partyDropdown.setAttribute('aria-hidden', 'false');
+    partyDropdown.classList.add('party-dropdown--open');
+  }
+
+  function hidePartyDropdown() {
+    if (partyDropdown) {
+      partyDropdown.classList.remove('party-dropdown--open');
+      partyDropdown.setAttribute('aria-hidden', 'true');
+    }
+  }
+
+  function selectParty(id, name) {
+    if (partyIdInput) partyIdInput.value = id;
+    if (partySearch) partySearch.value = name || '';
+    hidePartyDropdown();
+  }
+
+  if (partySearch && partyDropdown) {
+    partySearch.addEventListener('focus', showPartyDropdown);
+    partySearch.addEventListener('input', showPartyDropdown);
+    partySearch.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') { hidePartyDropdown(); return; }
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        var first = partyDropdown.querySelector('.party-dropdown__item');
+        if (first) selectParty(first.getAttribute('data-id'), first.getAttribute('data-name'));
+        else hidePartyDropdown();
+      }
+    });
+    partySearch.addEventListener('blur', function() { setTimeout(hidePartyDropdown, 200); });
+    partyDropdown.addEventListener('mousedown', function(e) {
+      var item = e.target.closest('.party-dropdown__item');
+      if (item) { e.preventDefault(); selectParty(item.getAttribute('data-id'), item.getAttribute('data-name')); }
+    });
+  }
+
+  function nextIndex() {
+    var rows = tbody.querySelectorAll('.order-item-row:not(.order-item-row--destroy)');
+    var max = -1;
+    rows.forEach(function(r) {
+      var i = parseInt(r.getAttribute('data-index'), 10);
+      if (!isNaN(i) && i > max) max = i;
+    });
+    return max + 1;
+  }
+
+  function updateLineRow(row) {
+    var productSelect = row.querySelector('.form-select--product-row');
+    var qtyInput = row.querySelector('.input-qty');
+    var unitPriceDisplay = row.querySelector('.line-unit-price');
+    var unitPriceInput = row.querySelector('.input-unit-price');
+    var lineTotalEl = row.querySelector('.line-total');
+    var productNameInput = row.querySelector('.input-product-name');
+    var id = productSelect && productSelect.options[productSelect.selectedIndex] && productSelect.options[productSelect.selectedIndex].value;
+    var p = productsJson.find(function(x) { return String(x.id) === String(id); });
+    var qty = parseFloat(qtyInput && qtyInput.value) || 0;
+    var unitPrice = p ? p.unit_price : (parseFloat(unitPriceInput && unitPriceInput.value) || 0);
+    if (p) {
+      if (unitPriceInput) unitPriceInput.value = p.unit_price;
+      if (productNameInput) productNameInput.value = p.name;
+      if (unitPriceDisplay) unitPriceDisplay.textContent = p.unit_price.toLocaleString('en-PK', { minimumFractionDigits: 2 });
+    } else if (unitPriceInput && unitPriceInput.value) {
+      if (unitPriceDisplay) unitPriceDisplay.textContent = parseFloat(unitPriceInput.value).toLocaleString('en-PK', { minimumFractionDigits: 2 });
+    } else {
+      if (unitPriceDisplay) unitPriceDisplay.textContent = '—';
+    }
+    var lineTotal = qty * unitPrice;
+    if (lineTotalEl) lineTotalEl.textContent = lineTotal > 0 ? lineTotal.toLocaleString('en-PK', { minimumFractionDigits: 2 }) : '—';
+    updateGrandTotal();
+  }
+
+  function updateGrandTotal() {
+    var total = 0;
+    tbody.querySelectorAll('.order-item-row:not(.order-item-row--destroy)').forEach(function(row) {
+      var qty = parseFloat(row.querySelector('.input-qty') && row.querySelector('.input-qty').value) || 0;
+      var up = parseFloat(row.querySelector('.input-unit-price') && row.querySelector('.input-unit-price').value) || 0;
+      total += qty * up;
+    });
+    var el = form.querySelector('#grand_total');
+    if (el) el.textContent = total > 0 ? total.toLocaleString('en-PK', { minimumFractionDigits: 2 }) : '—';
+  }
+
+  tbody.addEventListener('change', function(e) {
+    if (e.target.classList.contains('form-select--product-row') || e.target.classList.contains('input-qty')) {
+      var row = e.target.closest('.order-item-row');
+      if (row && !row.classList.contains('order-item-row--destroy')) updateLineRow(row);
+    }
+  });
+  tbody.addEventListener('input', function(e) {
+    if (e.target.classList.contains('input-qty')) {
+      var row = e.target.closest('.order-item-row');
+      if (row && !row.classList.contains('order-item-row--destroy')) updateLineRow(row);
+    }
+  });
+
+  addBtn.addEventListener('click', function() {
+    var idx = nextIndex();
+    var names = ['product_id', 'product_name', 'quantity', 'unit_price', '_destroy'];
+    var tr = document.createElement('tr');
+    tr.className = 'order-item-row';
+    tr.setAttribute('data-index', idx);
+    tr.innerHTML =
+      '<td><select name="order[order_items_attributes][' + idx + '][product_id]" id="order_order_items_attributes_' + idx + '_product_id" class="form-select form-select--product-row">' +
+      '<option value="">Select product</option>' +
+      productsJson.map(function(p) { return '<option value="' + p.id + '" data-unit-price="' + p.unit_price + '" data-name="' + p.name + '">' + p.name + '</option>'; }).join('') +
+      '</select><input type="hidden" name="order[order_items_attributes][' + idx + '][product_name]" class="input-product-name"></td>' +
+      '<td class="col-qty"><input type="number" name="order[order_items_attributes][' + idx + '][quantity]" class="form-input input-qty" placeholder="0" step="any" min="0"></td>' +
+      '<td class="col-price"><span class="line-unit-price">—</span><input type="hidden" name="order[order_items_attributes][' + idx + '][unit_price]" class="input-unit-price"></td>' +
+      '<td class="col-total"><span class="line-total">—</span></td>' +
+      '<td class="col-action"><input type="hidden" name="order[order_items_attributes][' + idx + '][_destroy]" value="0" class="input-destroy"><button type="button" class="btn-remove-line" title="Remove line">×</button></td>';
+    tbody.appendChild(tr);
+    tr.querySelectorAll('.form-select--product-row option').forEach(function(opt) {
+      if (opt.value) opt.setAttribute('data-unit-price', opt.getAttribute('data-unit-price') || '');
+    });
+  });
+
+  tbody.addEventListener('click', function(e) {
+    if (e.target.classList.contains('btn-remove-line')) {
+      var row = e.target.closest('.order-item-row');
+      var destroyInput = row && row.querySelector('.input-destroy');
+      var idInput = row && row.querySelector('input[name*="[id]"]');
+      if (idInput && idInput.value) {
+        if (destroyInput) { destroyInput.value = '1'; row.classList.add('order-item-row--destroy'); row.style.display = 'none'; }
+      } else {
+        row.remove();
+      }
+      updateGrandTotal();
+    }
+  });
+
+  tbody.querySelectorAll('.order-item-row').forEach(function(row) {
+    updateLineRow(row);
+  });
+})();
+</script>

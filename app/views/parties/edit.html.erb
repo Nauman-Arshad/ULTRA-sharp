@@ -1,0 +1,20 @@
+<div class="dashboard">
+  <%= render "shared/navbar" %>
+  <div class="dashboard-body">
+    <%= render "shared/sidebar", current_tab: "parties" %>
+    <main class="dashboard-main">
+      <div class="dashboard-card">
+        <div class="page-header">
+          <h1 class="page-title">Edit Party</h1>
+          <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+            <%= link_to "Back to Party", party_path(@party), class: "btn-secondary" %>
+            <%= link_to "Delete", party_path(@party), data: { turbo_method: :delete, turbo_confirm: "Are you sure you want to delete this party? This will also delete all related orders and payments." }, class: "btn-danger" %>
+          </div>
+        </div>
+        <div class="form-card">
+          <%= render "form" %>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>

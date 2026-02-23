@@ -1,0 +1,7 @@
+<header class="dashboard-navbar">
+  <div class="navbar-brand">
+    <span class="navbar-brand-icon"><%= render "shared/icon_brand" %></span>
+    <%= link_to "ULTRA Sharp", root_path, class: "navbar-brand-text" %>
+  </div>
+  <%= link_to "Sign out", session_path, data: { turbo_method: :delete }, class: "navbar-sign-out" %>
+</header>

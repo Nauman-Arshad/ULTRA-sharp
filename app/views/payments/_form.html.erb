@@ -1,0 +1,28 @@
+<%= form_with model: @payment, class: "payment-form" do |f| %>
+  <% if @payment.errors.any? %>
+    <div class="form-errors">
+      <ul>
+        <% @payment.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="form-group">
+    <%= f.label :party_id, "Party" %>
+    <%= f.collection_select :party_id, @parties, :id, :party_name, { prompt: "Select party" }, class: "form-select" %>
+  </div>
+  <div class="form-group">
+    <%= f.label :amount, "Amount" %>
+    <%= f.number_field :amount, class: "form-input", placeholder: "0.00", step: 0.01, required: true %>
+  </div>
+  <div class="form-group">
+    <%= f.label :payment_date, "Payment date" %>
+    <%= f.date_field :payment_date, class: "form-input" %>
+  </div>
+  <div class="form-actions">
+    <%= f.submit class: "btn-primary" %>
+    <%= link_to "Cancel", @payment.persisted? ? payment_path(@payment) : root_path(tab: "payments"), class: "btn-secondary" %>
+  </div>
+<% end %>

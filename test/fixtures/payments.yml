@@ -1,0 +1,13 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  party: one
+  order: one
+  amount: 9.99
+  payment_date: 2026-02-23
+
+two:
+  party: two
+  order: two
+  amount: 9.99
+  payment_date: 2026-02-23

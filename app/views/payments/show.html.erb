@@ -1,0 +1,38 @@
+<div class="dashboard">
+  <%= render "shared/navbar" %>
+  <div class="dashboard-body">
+    <%= render "shared/sidebar", current_tab: "payments" %>
+    <main class="dashboard-main">
+      <div class="dashboard-card">
+        <div class="page-header">
+          <h1 class="page-title">Payment #<%= @payment.id %></h1>
+          <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+            <%= link_to "Edit", edit_payment_path(@payment), class: "btn-primary" %>
+            <%= link_to "Back to Payments", root_path(tab: "payments"), class: "btn-secondary" %>
+            <%= link_to "Delete", payment_path(@payment), data: { turbo_method: :delete, turbo_confirm: "Are you sure you want to delete this payment?" }, class: "btn-danger" %>
+          </div>
+        </div>
+        <div class="show-card">
+          <div class="show-row">
+            <span class="show-label">Party</span>
+            <span class="show-value"><%= link_to @payment.party.party_name, party_path(@payment.party) %></span>
+          </div>
+          <% if @payment.order_id.present? %>
+            <div class="show-row">
+              <span class="show-label">Order</span>
+              <span class="show-value"><%= link_to @payment.order.display_number, order_path(@payment.order) %></span>
+            </div>
+          <% end %>
+          <div class="show-row">
+            <span class="show-label">Amount</span>
+            <span class="show-value"><%= number_to_currency(@payment.amount) %></span>
+          </div>
+          <div class="show-row">
+            <span class="show-label">Payment date</span>
+            <span class="show-value"><%= @payment.payment_date&.strftime("%b %d, %Y") %></span>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>

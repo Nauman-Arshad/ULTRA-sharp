@@ -1,0 +1,308 @@
+<div class="dashboard">
+  <%= render "shared/navbar" %>
+  <div class="dashboard-body">
+    <%= render "shared/sidebar", current_tab: @tab %>
+
+    <main class="dashboard-main">
+    <div class="dashboard-card">
+      <div class="dashboard-header">
+        <% if @tab == "dashboard" %>
+          <div class="dashboard-hero">
+            <h1 class="dashboard-greeting">
+              <span class="dashboard-greeting__text">Hello, <%= Current.user&.email_address&.split("@")&.first || "User" %></span>
+              <svg class="dashboard-greeting__wave" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 14c-1.5 0-2.5-.5-3-1.5S3 10 4 9s2.5-1 4-1 3 .5 3.5 1.5-1 3.5-2 3.5-2.5 1.5-4-1.5-4-3.5-1.5-4 1-2 2.5-2 4 1 4 3.5 1.5 4 2 3.5 1 5 1"/></svg>
+            </h1>
+            <p class="dashboard-hero__sub">Here’s what’s happening with your business today.</p>
+          </div>
+        <% end %>
+        <%= form_with url: root_path, method: :get, local: true, class: "dashboard-search-form" do |f| %>
+          <%= f.hidden_field :tab, value: @tab %>
+          <%= f.search_field :query, value: @query, placeholder: "Search…", class: "dashboard-search" %>
+        <% end %>
+      </div>
+
+      <% if @tab == "dashboard" %>
+        <section class="dash-section dash-overview">
+          <h2 class="dash-section__title">Overview</h2>
+          <div class="dash-kpi-grid">
+            <div class="dash-kpi dash-kpi--accent dash-kpi--green">
+              <div class="dash-kpi__icon" aria-hidden="true"><%= render "shared/icon_money" %></div>
+              <div class="dash-kpi__body">
+                <div class="dash-kpi__value"><%= number_to_currency(@payments_total) %></div>
+                <div class="dash-kpi__label">Total received</div>
+              </div>
+            </div>
+            <div class="dash-kpi dash-kpi--accent dash-kpi--amber">
+              <div class="dash-kpi__icon" aria-hidden="true"><%= render "shared/icon_outstanding" %></div>
+              <div class="dash-kpi__body">
+                <div class="dash-kpi__value"><%= number_to_currency(@outstanding_balance) %></div>
+                <div class="dash-kpi__label">Outstanding</div>
+              </div>
+            </div>
+            <div class="dash-kpi">
+              <div class="dash-kpi__icon" aria-hidden="true"><%= render "shared/icon_users" %></div>
+              <div class="dash-kpi__body">
+                <div class="dash-kpi__value"><%= number_with_delimiter(@parties_count) %></div>
+                <div class="dash-kpi__label">Parties</div>
+              </div>
+            </div>
+            <div class="dash-kpi">
+              <div class="dash-kpi__icon" aria-hidden="true"><%= render "shared/icon_clipboard" %></div>
+              <div class="dash-kpi__body">
+                <div class="dash-kpi__value"><%= number_with_delimiter(@orders_count) %></div>
+                <div class="dash-kpi__label">Orders</div>
+              </div>
+            </div>
+            <div class="dash-kpi">
+              <div class="dash-kpi__icon" aria-hidden="true"><%= render "shared/icon_clock" %></div>
+              <div class="dash-kpi__body">
+                <div class="dash-kpi__value"><%= number_with_delimiter(@orders_pending) %></div>
+                <div class="dash-kpi__label">Pending</div>
+              </div>
+            </div>
+            <div class="dash-kpi">
+              <div class="dash-kpi__icon" aria-hidden="true"><%= render "shared/icon_payments" %></div>
+              <div class="dash-kpi__body">
+                <div class="dash-kpi__value"><%= number_with_delimiter(@payments_count) %></div>
+                <div class="dash-kpi__label">Payments</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="dash-section dash-actions">
+          <h2 class="dash-section__title">Quick actions</h2>
+          <div class="dash-actions-grid">
+            <%= link_to root_path(tab: "parties"), class: "dash-action" do %>
+              <span class="dash-action__icon"><%= render "shared/icon_parties" %></span>
+              <span class="dash-action__label">Parties</span>
+              <span class="dash-action__hint">View & manage</span>
+            <% end %>
+            <%= link_to new_order_path, class: "dash-action dash-action--primary" do %>
+              <span class="dash-action__icon"><%= render "shared/icon_plus" %></span>
+              <span class="dash-action__label">New order</span>
+              <span class="dash-action__hint">Create order</span>
+            <% end %>
+            <%= link_to new_payment_path, class: "dash-action" do %>
+              <span class="dash-action__icon"><%= render "shared/icon_payments" %></span>
+              <span class="dash-action__label">Record payment</span>
+              <span class="dash-action__hint">Add payment</span>
+            <% end %>
+            <%= link_to root_path(tab: "products"), class: "dash-action" do %>
+              <span class="dash-action__icon"><%= render "shared/icon_products" %></span>
+              <span class="dash-action__label">Products</span>
+              <span class="dash-action__hint">View & manage</span>
+            <% end %>
+          </div>
+        </section>
+
+        <section class="dash-section dash-activity">
+          <div class="dash-activity-head">
+            <div>
+              <h2 class="dash-section__title">Recent activity</h2>
+              <p class="dash-section__sub">Latest parties, orders, and payments</p>
+            </div>
+            <div class="dash-activity-links">
+              <%= link_to "Parties", root_path(tab: "parties"), class: "btn-outline btn-sm" %>
+              <%= link_to "Orders", root_path(tab: "orders"), class: "btn-outline btn-sm" %>
+              <%= link_to "Payments", root_path(tab: "payments"), class: "btn-outline btn-sm" %>
+            </div>
+          </div>
+          <% if @latest_records.empty? %>
+            <div class="dash-empty">
+              <svg class="dash-empty__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2"/></svg>
+              <p>No activity yet.</p>
+              <%= link_to "Add a party", new_party_path, class: "link" %> or <%= link_to "create an order", new_order_path, class: "link" %> to get started.
+            </div>
+          <% else %>
+            <div class="dash-table-wrap">
+              <table class="dash-table">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Record</th>
+                    <th>Details</th>
+                    <th>Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @latest_records.each do |item| %>
+                    <tr>
+                      <td><%= tag.span item[:type], class: "dash-pill dash-pill--#{item[:type].downcase}" %></td>
+                      <td>
+                        <% case item[:type] %>
+                        <% when "Party" %>
+                          <%= link_to item[:record].party_name, party_path(item[:record]), class: "dash-link" %>
+                        <% when "Order" %>
+                          <%= link_to item[:record].order_number.presence || "Order ##{item[:record].id}", order_path(item[:record]), class: "dash-link" %>
+                        <% when "Payment" %>
+                          <%= link_to number_to_currency(item[:record].amount), payment_path(item[:record]), class: "dash-link" %>
+                        <% end %>
+                      </td>
+                      <td class="dash-table-details">
+                        <% case item[:type] %>
+                        <% when "Party" %>
+                          <%= item[:record].phone %> · <%= truncate(item[:record].address, length: 30) %> · <%= tag.span(item[:record].status.presence || "—", class: "status-pill #{item[:record].status&.downcase == "active" ? "active" : "inactive"}") %>
+                        <% when "Order" %>
+                          <%= link_to item[:record].party.party_name, party_path(item[:record].party), class: "dash-link" %> · <%= item[:record].products_summary %> · <%= number_to_currency(item[:record].total_amount) %> · <%= tag.span(item[:record].payment_status.presence || "—", class: "status-pill #{item[:record].payment_status&.downcase}") %>
+                        <% when "Payment" %>
+                          <%= link_to item[:record].party.party_name, party_path(item[:record].party), class: "dash-link" %><%= " · " if item[:record].order_id.present? %><%= item[:record].order_id.present? ? link_to(item[:record].order.display_number, order_path(item[:record].order), class: "dash-link") : nil %><%= " · " if item[:record].payment_date.present? %><%= item[:record].payment_date&.strftime("%b %d, %Y") %>
+                        <% end %>
+                      </td>
+                      <td class="dash-table-date"><%= item[:created_at].strftime("%b %d, %Y %l:%M %p") %></td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          <% end %>
+        </section>
+      <% end %>
+
+      <% if @tab == "products" %>
+        <div class="dashboard-table-toolbar">
+          <div>
+            <div class="dashboard-table-title">All Products</div>
+            <div class="dashboard-table-subtitle"><%= @products.size %> <%= @products.size == 1 ? "product" : "products" %></div>
+          </div>
+          <%= link_to "Add Product", new_product_path, class: "btn-primary" %>
+        </div>
+        <% if @products.empty? %>
+          <p class="dashboard-empty">No products yet. <%= link_to "Add a product", new_product_path, class: "table-link" %> to use in orders.</p>
+        <% else %>
+          <div class="dashboard-table-wrap">
+            <table class="dashboard-table">
+              <thead>
+                <tr>
+                  <th>Product name</th>
+                  <th>Unit price</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% @products.each do |product| %>
+                  <tr>
+                    <td><%= link_to product.name, product_path(product), class: "table-link" %></td>
+                    <td><%= number_to_currency(product.unit_price) %></td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        <% end %>
+      <% end %>
+
+      <% if @tab == "parties" %>
+        <div class="dashboard-table-toolbar">
+          <div>
+            <div class="dashboard-table-title">All Parties</div>
+            <div class="dashboard-table-subtitle"><%= @parties.size %> <%= @parties.size == 1 ? "party" : "parties" %></div>
+          </div>
+          <%= link_to "Add Party", new_party_path, class: "btn-primary" %>
+        </div>
+        <% if @parties.empty? %>
+          <p style="color: #64748b; padding: 24px 0;">No parties found.</p>
+        <% else %>
+          <div class="dashboard-table-wrap">
+            <table class="dashboard-table">
+              <thead>
+                <tr>
+                  <th>Party Name</th>
+                  <th>Phone</th>
+                  <th>Address</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% @parties.each do |party| %>
+                  <tr>
+                    <td><%= link_to party.party_name, party_path(party), class: "table-link" %></td>
+                    <td><%= party.phone %></td>
+                    <td><%= truncate(party.address, length: 40) %></td>
+                    <td><%= tag.span(party.status.presence || "—", class: "status-pill #{party.status&.downcase == "active" ? "active" : "inactive"}") %></td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        <% end %>
+      <% end %>
+
+      <% if @tab == "payments" %>
+        <div class="dashboard-table-toolbar">
+          <div>
+            <div class="dashboard-table-title">All Payments</div>
+            <div class="dashboard-table-subtitle"><%= @payments.size %> <%= @payments.size == 1 ? "payment" : "payments" %></div>
+          </div>
+          <%= link_to "Add Payment", new_payment_path, class: "btn-primary" %>
+        </div>
+        <% if @payments.empty? %>
+          <p style="color: #64748b; padding: 24px 0;">No payments found.</p>
+        <% else %>
+          <div class="dashboard-table-wrap">
+            <table class="dashboard-table">
+              <thead>
+                <tr>
+                  <th>Party</th>
+                  <th>Order</th>
+                  <th>Amount</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% @payments.each do |payment| %>
+                  <tr>
+                    <td><%= link_to payment.party.party_name, party_path(payment.party), class: "table-link" %></td>
+                    <td><%= payment.order_id.present? ? link_to(payment.order.display_number, order_path(payment.order), class: "table-link") : "—" %></td>
+                    <td><%= link_to number_to_currency(payment.amount), payment_path(payment), class: "table-link" %></td>
+                    <td><%= payment.payment_date&.strftime("%b %d, %Y") %></td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        <% end %>
+      <% end %>
+
+      <% if @tab == "orders" %>
+        <div class="dashboard-table-toolbar">
+          <div>
+            <div class="dashboard-table-title">All Orders</div>
+            <div class="dashboard-table-subtitle"><%= @orders.size %> <%= @orders.size == 1 ? "order" : "orders" %></div>
+          </div>
+          <%= link_to "Add Order", new_order_path, class: "btn-primary" %>
+        </div>
+        <% if @orders.empty? %>
+          <p style="color: #64748b; padding: 24px 0;">No orders found.</p>
+        <% else %>
+          <div class="dashboard-table-wrap">
+            <table class="dashboard-table">
+              <thead>
+                <tr>
+                  <th>Order #</th>
+                  <th>Party</th>
+                  <th>Product</th>
+                  <th>Total</th>
+                  <th>Order Status</th>
+                  <th>Payment Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% @orders.each do |order| %>
+                  <tr>
+                    <td><%= link_to order.order_number, order_path(order), class: "table-link" %></td>
+                    <td><%= link_to order.party.party_name, party_path(order.party), class: "table-link" %></td>
+                    <td><%= order.products_summary %></td>
+                    <td><%= number_to_currency(order.total_amount) %></td>
+                    <td><%= order.order_status %></td>
+                    <td><%= tag.span(order.payment_status.presence || "—", class: "status-pill #{order.payment_status&.downcase}") %></td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        <% end %>
+      <% end %>
+    </div>
+    </main>
+  </div>
+</div>

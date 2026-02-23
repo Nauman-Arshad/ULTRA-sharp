@@ -1,0 +1,9 @@
+<aside class="dashboard-sidebar">
+  <ul class="dashboard-nav">
+    <li><%= link_to root_path(tab: "dashboard"), class: (current_tab == "dashboard" ? "active" : "") do %><span class="nav-icon"><%= render "shared/icon_dashboard" %></span> Dashboard<% end %></li>
+    <li><%= link_to root_path(tab: "parties"), class: (current_tab == "parties" ? "active" : "") do %><span class="nav-icon"><%= render "shared/icon_parties" %></span> Parties<% end %></li>
+    <li><%= link_to root_path(tab: "products"), class: (current_tab == "products" ? "active" : "") do %><span class="nav-icon"><%= render "shared/icon_products" %></span> Products<% end %></li>
+    <li><%= link_to root_path(tab: "orders"), class: (current_tab == "orders" ? "active" : "") do %><span class="nav-icon"><%= render "shared/icon_orders" %></span> Orders<% end %></li>
+    <li><%= link_to root_path(tab: "payments"), class: (current_tab == "payments" ? "active" : "") do %><span class="nav-icon"><%= render "shared/icon_payments" %></span> Payments<% end %></li>
+  </ul>
+</aside>

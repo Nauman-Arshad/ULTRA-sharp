@@ -1,0 +1,17 @@
+<div class="dashboard">
+  <%= render "shared/navbar" %>
+  <div class="dashboard-body">
+    <%= render "shared/sidebar", current_tab: "orders" %>
+    <main class="dashboard-main">
+      <div class="dashboard-card order-form-card">
+        <div class="page-header">
+          <h1 class="page-title">New order</h1>
+          <%= link_to "Back to Orders", root_path(tab: "orders"), class: "btn-secondary" %>
+        </div>
+        <div class="order-form-card__body">
+          <%= render "form" %>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>

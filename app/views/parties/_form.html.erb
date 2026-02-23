@@ -1,0 +1,39 @@
+<%= form_with model: @party, class: "party-form" do |f| %>
+  <% if @party.errors.any? %>
+    <div class="form-errors">
+      <ul>
+        <% @party.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="form-group">
+    <%= f.label :party_name, "Party name" %>
+    <%= f.text_field :party_name, class: "form-input", placeholder: "Name", autofocus: true %>
+  </div>
+  <div class="form-group">
+    <%= f.label :phone, "Phone" %>
+    <%= f.text_field :phone, class: "form-input", placeholder: "Phone number" %>
+  </div>
+  <div class="form-group">
+    <%= f.label :address, "Address" %>
+    <%= f.text_area :address, class: "form-input form-textarea", placeholder: "Address", rows: 3 %>
+  </div>
+  <div class="form-group">
+    <%= f.label :status, "Status" %>
+    <%= f.select :status, options_for_select([["Active", "active"], ["Inactive", "inactive"]], @party.status), { include_blank: "Select status" }, class: "form-select" %>
+  </div>
+  <% if @party.new_record? %>
+    <div class="form-group">
+      <%= f.label :account_balance, "Opening balance (PKR)" %>
+      <%= f.number_field :account_balance, class: "form-input", placeholder: "0", step: 0.01, value: @party.account_balance || 0 %>
+      <p class="form-hint">Remaining balance from before. Positive = they owe you, negative = advance/credit. Leave 0 if none.</p>
+    </div>
+  <% end %>
+  <div class="form-actions">
+    <%= f.submit class: "btn-primary" %>
+    <%= link_to "Cancel", @party.persisted? ? party_path(@party) : root_path(tab: "parties"), class: "btn-secondary" %>
+  </div>
+<% end %>
