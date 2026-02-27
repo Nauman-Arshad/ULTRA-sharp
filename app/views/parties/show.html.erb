@@ -7,6 +7,15 @@
         <div class="page-header">
           <h1 class="page-title"><%= @party.party_name %></h1>
           <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+            <a href="#party_history" class="btn-secondary btn-secondary--light">
+              <span class="btn-history-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" class="icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <path d="M12 6v6l4 2"></path>
+                </svg>
+              </span>
+              History
+            </a>
             <%= link_to "Edit", edit_party_path(@party), class: "btn-primary" %>
             <%= link_to "Back to Parties", root_path(tab: "parties"), class: "btn-secondary" %>
             <%= link_to "Delete", party_path(@party), data: { turbo_method: :delete, turbo_confirm: "Are you sure you want to delete this party? This will also delete all related orders and payments." }, class: "btn-danger" %>
@@ -43,69 +52,58 @@
           </div>
         </div>
 
-        <section class="party-history">
-          <h2 class="party-history__title">Orders</h2>
-          <% if @party.orders.any? %>
-            <div class="table-wrap">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th>Order</th>
-                    <th>Date</th>
-                    <th>Total</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <% @party.orders.order(created_at: :desc).limit(20).each do |order| %>
-                    <tr>
-                      <td><%= order.display_number %></td>
-                      <td><%= order.order_date&.strftime("%b %d, %Y") || order.created_at.strftime("%b %d, %Y") %></td>
-                      <td><%= number_to_currency(order.total_amount) %></td>
-                      <td><%= link_to "View", order_path(order), class: "btn-link" %></td>
-                    </tr>
-                  <% end %>
-                </tbody>
-              </table>
-            </div>
-            <% if @party.orders.count > 20 %>
-              <p class="party-history__more"><%= @party.orders.count - 20 %> more orders</p>
-            <% end %>
+        <section class="party-history party-history--combined" id="party_history">
+          <h2 class="party-history__title">History</h2>
+          <% if @history_items.blank? %>
+            <p class="party-history__empty">No orders or payments yet.</p>
           <% else %>
-            <p class="party-history__empty">No orders yet.</p>
-          <% end %>
-        </section>
-
-        <section class="party-history">
-          <h2 class="party-history__title">Payments</h2>
-          <% if @party.payments.any? %>
-            <div class="table-wrap">
-              <table class="data-table">
+            <div class="dash-table-wrap party-history-table-wrap">
+              <table class="dash-table party-history-table">
                 <thead>
                   <tr>
                     <th>Date</th>
+                    <th>Type</th>
+                    <th>Description</th>
                     <th>Amount</th>
-                    <th>Order</th>
+                    <th>Balance after</th>
                     <th></th>
                   </tr>
                 </thead>
                 <tbody>
-                  <% @party.payments.order(payment_date: :desc, created_at: :desc).limit(20).each do |payment| %>
+                  <% @history_items.each do |item| %>
                     <tr>
-                      <td><%= payment.payment_date&.strftime("%b %d, %Y") %></td>
-                      <td><%= number_to_currency(payment.amount) %></td>
-                      <td><%= payment.order_id.present? ? link_to(payment.order.display_number, order_path(payment.order)) : "—" %></td>
-                      <td><%= link_to "View", payment_path(payment), class: "btn-link" %></td>
+                      <td><%= item[:date].strftime("%b %d, %Y") %></td>
+                      <td><%= item[:kind] %></td>
+                      <td><%= item[:description] %></td>
+                      <td class="text-mono">
+                        <% if item[:kind] == "Payment" || (item[:kind] == "Opening" && item[:delta].negative?) %>
+                          +<%= number_to_currency(item[:amount]) %>
+                        <% else %>
+                          −<%= number_to_currency(item[:amount]) %>
+                        <% end %>
+                      </td>
+                      <td class="text-mono">
+                        <% balance = item[:balance] %>
+                        <% if balance > 0 %>
+                          −<%= number_to_currency(balance) %>
+                        <% elsif balance < 0 %>
+                          +<%= number_to_currency(-balance) %>
+                        <% else %>
+                          <%= number_to_currency(0) %>
+                        <% end %>
+                      </td>
+                      <td>
+                        <% if item[:record].is_a?(Order) %>
+                          <%= link_to "View order", order_path(item[:record]), class: "btn-link" %>
+                        <% elsif item[:record].is_a?(Payment) %>
+                          <%= link_to "View payment", payment_path(item[:record]), class: "btn-link" %>
+                        <% end %>
+                      </td>
                     </tr>
                   <% end %>
                 </tbody>
               </table>
             </div>
-            <% if @party.payments.count > 20 %>
-              <p class="party-history__more"><%= @party.payments.count - 20 %> more payments</p>
-            <% end %>
-          <% else %>
-            <p class="party-history__empty">No payments yet.</p>
           <% end %>
         </section>
       </div>

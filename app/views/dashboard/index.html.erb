@@ -9,7 +9,7 @@
         <% if @tab == "dashboard" %>
           <div class="dashboard-hero">
             <h1 class="dashboard-greeting">
-              <span class="dashboard-greeting__text">Hello, <%= Current.user&.email_address&.split("@")&.first || "User" %></span>
+              <span class="dashboard-greeting__text">Hello, <%= Current.user&.username.presence || Current.user&.email_address&.split("@")&.first || "User" %></span>
               <svg class="dashboard-greeting__wave" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 14c-1.5 0-2.5-.5-3-1.5S3 10 4 9s2.5-1 4-1 3 .5 3.5 1.5-1 3.5-2 3.5-2.5 1.5-4-1.5-4-3.5-1.5-4 1-2 2.5-2 4 1 4 3.5 1.5 4 2 3.5 1 5 1"/></svg>
             </h1>
             <p class="dashboard-hero__sub">Here’s what’s happening with your business today.</p>
@@ -23,76 +23,59 @@
 
       <% if @tab == "dashboard" %>
         <section class="dash-section dash-overview">
-          <h2 class="dash-section__title">Overview</h2>
+          <div class="dash-overview-head">
+            <div>
+              <h2 class="dash-section__title">Overview</h2>
+              <p class="dash-section__sub">
+                For
+                <%= @from_date.strftime("%b %d, %Y") %>
+                –
+                <%= @to_date.strftime("%b %d, %Y") %>
+              </p>
+            </div>
+            <%= form_with url: root_path, method: :get, local: true, class: "dash-range-form" do |f| %>
+              <%= f.hidden_field :tab, value: "dashboard" %>
+              <div class="dash-range-pills">
+                <button type="submit" name="range" value="7d" class="dash-range-pill <%= 'active' if @range == '7d' %>">Last 7 days</button>
+                <button type="submit" name="range" value="30d" class="dash-range-pill <%= 'active' if @range == '30d' %>">Last 30 days</button>
+                <button type="submit" name="range" value="custom" class="dash-range-pill <%= 'active' if @range == 'custom' %>">Custom</button>
+              </div>
+              <div class="dash-range-dates">
+                <span>From</span>
+                <%= f.date_field :from, value: @from_date, class: "dash-range-date" %>
+                <span>to</span>
+                <%= f.date_field :to, value: @to_date, class: "dash-range-date" %>
+                <button type="submit" class="btn-secondary btn-sm dash-range-apply">Apply</button>
+              </div>
+            <% end %>
+          </div>
           <div class="dash-kpi-grid">
-            <div class="dash-kpi dash-kpi--accent dash-kpi--green">
+            <div class="dash-kpi dash-kpi--green">
               <div class="dash-kpi__icon" aria-hidden="true"><%= render "shared/icon_money" %></div>
               <div class="dash-kpi__body">
-                <div class="dash-kpi__value"><%= number_to_currency(@payments_total) %></div>
-                <div class="dash-kpi__label">Total received</div>
+                <div class="dash-kpi__value"><%= number_to_currency(@payments_amount_in_period) %></div>
+                <div class="dash-kpi__label">Payments received</div>
+                <div class="dash-kpi__meta"><%= number_with_delimiter(@payments_count_in_period) %> payments in this period</div>
               </div>
             </div>
-            <div class="dash-kpi dash-kpi--accent dash-kpi--amber">
-              <div class="dash-kpi__icon" aria-hidden="true"><%= render "shared/icon_outstanding" %></div>
-              <div class="dash-kpi__body">
-                <div class="dash-kpi__value"><%= number_to_currency(@outstanding_balance) %></div>
-                <div class="dash-kpi__label">Outstanding</div>
-              </div>
-            </div>
-            <div class="dash-kpi">
-              <div class="dash-kpi__icon" aria-hidden="true"><%= render "shared/icon_users" %></div>
-              <div class="dash-kpi__body">
-                <div class="dash-kpi__value"><%= number_with_delimiter(@parties_count) %></div>
-                <div class="dash-kpi__label">Parties</div>
-              </div>
-            </div>
-            <div class="dash-kpi">
+
+            <div class="dash-kpi dash-kpi--purple">
               <div class="dash-kpi__icon" aria-hidden="true"><%= render "shared/icon_clipboard" %></div>
               <div class="dash-kpi__body">
-                <div class="dash-kpi__value"><%= number_with_delimiter(@orders_count) %></div>
+                <div class="dash-kpi__value"><%= number_with_delimiter(@orders_in_period) %></div>
                 <div class="dash-kpi__label">Orders</div>
+                <div class="dash-kpi__meta"><%= number_with_delimiter(@orders_pending_in_period) %> pending · <%= number_with_delimiter(@orders_in_progress_in_period) %> in progress</div>
               </div>
             </div>
-            <div class="dash-kpi">
-              <div class="dash-kpi__icon" aria-hidden="true"><%= render "shared/icon_clock" %></div>
-              <div class="dash-kpi__body">
-                <div class="dash-kpi__value"><%= number_with_delimiter(@orders_pending) %></div>
-                <div class="dash-kpi__label">Pending</div>
-              </div>
-            </div>
-            <div class="dash-kpi">
-              <div class="dash-kpi__icon" aria-hidden="true"><%= render "shared/icon_payments" %></div>
-              <div class="dash-kpi__body">
-                <div class="dash-kpi__value"><%= number_with_delimiter(@payments_count) %></div>
-                <div class="dash-kpi__label">Payments</div>
-              </div>
-            </div>
-          </div>
-        </section>
 
-        <section class="dash-section dash-actions">
-          <h2 class="dash-section__title">Quick actions</h2>
-          <div class="dash-actions-grid">
-            <%= link_to root_path(tab: "parties"), class: "dash-action" do %>
-              <span class="dash-action__icon"><%= render "shared/icon_parties" %></span>
-              <span class="dash-action__label">Parties</span>
-              <span class="dash-action__hint">View & manage</span>
-            <% end %>
-            <%= link_to new_order_path, class: "dash-action dash-action--primary" do %>
-              <span class="dash-action__icon"><%= render "shared/icon_plus" %></span>
-              <span class="dash-action__label">New order</span>
-              <span class="dash-action__hint">Create order</span>
-            <% end %>
-            <%= link_to new_payment_path, class: "dash-action" do %>
-              <span class="dash-action__icon"><%= render "shared/icon_payments" %></span>
-              <span class="dash-action__label">Record payment</span>
-              <span class="dash-action__hint">Add payment</span>
-            <% end %>
-            <%= link_to root_path(tab: "products"), class: "dash-action" do %>
-              <span class="dash-action__icon"><%= render "shared/icon_products" %></span>
-              <span class="dash-action__label">Products</span>
-              <span class="dash-action__hint">View & manage</span>
-            <% end %>
+            <div class="dash-kpi dash-kpi--blue">
+              <div class="dash-kpi__icon" aria-hidden="true"><%= render "shared/icon_users" %></div>
+              <div class="dash-kpi__body">
+                <div class="dash-kpi__value"><%= number_with_delimiter(@parties_total) %></div>
+                <div class="dash-kpi__label">Parties</div>
+                <div class="dash-kpi__meta"><%= number_with_delimiter(@parties_new) %> new in this period</div>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -101,11 +84,6 @@
             <div>
               <h2 class="dash-section__title">Recent activity</h2>
               <p class="dash-section__sub">Latest parties, orders, and payments</p>
-            </div>
-            <div class="dash-activity-links">
-              <%= link_to "Parties", root_path(tab: "parties"), class: "btn-outline btn-sm" %>
-              <%= link_to "Orders", root_path(tab: "orders"), class: "btn-outline btn-sm" %>
-              <%= link_to "Payments", root_path(tab: "payments"), class: "btn-outline btn-sm" %>
             </div>
           </div>
           <% if @latest_records.empty? %>

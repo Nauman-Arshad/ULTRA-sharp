@@ -15,7 +15,7 @@
 
     <%= form_with url: session_path, class: "session-form" do |form| %>
       <div class="session-field">
-        <%= form.email_field :email_address, required: true, autofocus: true, autocomplete: "username", placeholder: "Enter your email address", value: params[:email_address], class: "session-input" %>
+        <%= form.text_field :username, required: true, autofocus: true, autocomplete: "username", placeholder: "Enter your name", value: params[:username], class: "session-input" %>
       </div>
       <div class="session-field">
         <%= form.password_field :password, required: true, autocomplete: "current-password", placeholder: "Enter your password", maxlength: 72, class: "session-input" %>

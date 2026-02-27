@@ -15,6 +15,11 @@ Rails.application.routes.draw do
 
   resources :parties
   resources :products
-  resources :orders
+  resources :orders do
+    member do
+      get :internal_invoice
+      get :external_invoice
+    end
+  end
   resources :payments
 end

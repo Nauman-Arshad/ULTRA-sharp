@@ -1,13 +1,19 @@
 # frozen_string_literal: true
 
 class OrdersController < ApplicationController
-  before_action :set_order, only: %i[show edit update destroy]
+  before_action :set_order, only: %i[show edit update destroy internal_invoice external_invoice]
 
   def index
     redirect_to root_path(tab: "orders")
   end
 
   def show
+  end
+
+  def internal_invoice
+  end
+
+  def external_invoice
   end
 
   def new
@@ -59,9 +65,11 @@ class OrdersController < ApplicationController
   end
 
   def order_params
-    params.require(:order).permit(
+    permitted = params.require(:order).permit(
       :party_id, :advance_payment, :order_date, :order_status, :order_number,
       order_items_attributes: %i[id product_id product_name quantity unit_price _destroy]
     )
+    permitted[:advance_payment] = 0 unless params[:advance_enabled] == "1"
+    permitted
   end
 end

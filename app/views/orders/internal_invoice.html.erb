@@ -1,0 +1,86 @@
+<div class="dashboard">
+  <%= render "shared/navbar" %>
+  <div class="dashboard-body">
+    <%= render "shared/sidebar", current_tab: "orders" %>
+    <main class="dashboard-main">
+      <div class="dashboard-card invoice-card">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Internal invoice</h1>
+            <p class="invoice-subtitle">For internal records only</p>
+          </div>
+          <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+            <button type="button" class="btn-outline" onclick="window.print()">Download PDF</button>
+            <%= link_to "Back to order", order_path(@order), class: "btn-secondary" %>
+          </div>
+        </div>
+
+        <div class="show-card invoice-header">
+          <div class="invoice-header-left">
+            <div class="show-row">
+              <span class="show-label">Order number</span>
+              <span class="show-value"><%= @order.order_number %></span>
+            </div>
+            <div class="show-row">
+              <span class="show-label">Order date</span>
+              <span class="show-value"><%= @order.order_date&.strftime("%b %d, %Y") %></span>
+            </div>
+          </div>
+          <div class="invoice-header-right">
+            <div class="show-row">
+              <span class="show-label">Party name</span>
+              <span class="show-value"><%= @order.party.party_name %></span>
+            </div>
+            <div class="show-row">
+              <span class="show-label">Phone</span>
+              <span class="show-value"><%= @order.party.phone.presence || "—" %></span>
+            </div>
+            <div class="show-row">
+              <span class="show-label">Address</span>
+              <span class="show-value"><%= @order.party.address.presence || "—" %></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="show-card" style="margin-top: 20px;">
+          <h3 class="order-detail-title">Items</h3>
+          <table class="dash-table invoice-items-table">
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th style="text-align: right;">Quantity</th>
+                <th style="text-align: right;">Line total (PKR)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @order.order_items.each do |item| %>
+                <tr>
+                  <td><%= item.product_name %></td>
+                  <td style="text-align: right;"><%= item.quantity %></td>
+                  <td style="text-align: right;"><%= number_to_currency(item.line_total) %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+          <div class="show-row" style="border-top: 2px solid #e2e8f0; margin-top: 12px; padding-top: 12px;">
+            <span class="show-label">Order total</span>
+            <span class="show-value" style="font-weight: 700;"><%= number_to_currency(@order.total_amount) %></span>
+          </div>
+        </div>
+
+        <div class="show-card" style="margin-top: 20px;">
+          <h3 class="order-detail-title">Payment summary</h3>
+          <div class="show-row">
+            <span class="show-label">Advance payment</span>
+            <span class="show-value"><%= number_to_currency(@order.advance_payment) %></span>
+          </div>
+          <div class="show-row">
+            <span class="show-label">Remaining amount</span>
+            <span class="show-value"><%= number_to_currency(@order.remaining_amount) %></span>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
