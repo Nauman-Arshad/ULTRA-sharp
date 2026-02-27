@@ -175,7 +175,10 @@
             <div class="dashboard-table-title">All Parties</div>
             <div class="dashboard-table-subtitle"><%= @parties.size %> <%= @parties.size == 1 ? "party" : "parties" %></div>
           </div>
-          <%= link_to "Add Party", new_party_path, class: "btn-primary" %>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <%= link_to "Import from CSV", import_parties_path, class: "btn-secondary" %>
+            <%= link_to "Add Party", new_party_path, class: "btn-primary" %>
+          </div>
         </div>
         <% if @parties.empty? %>
           <p style="color: #64748b; padding: 24px 0;">No parties found.</p>

@@ -1,4 +1,4 @@
-# frozen_string_literal: true
+require "csv"
 
 class PartiesController < ApplicationController
   before_action :set_party, only: %i[show edit update destroy]
@@ -88,6 +88,58 @@ class PartiesController < ApplicationController
   def destroy
     @party.destroy
     redirect_to root_path(tab: "parties"), notice: "Party was successfully removed.", status: :see_other
+  end
+
+  def import
+  end
+
+  def import_csv
+    file = params[:file]
+
+    if file.blank?
+      redirect_to import_parties_path, alert: "Please choose a CSV file."
+      return
+    end
+
+    created = 0
+    skipped = 0
+
+    CSV.foreach(file.path, headers: true) do |row|
+      attrs = {
+        party_name: row["party_name"].to_s.strip,
+        phone: row["phone"].to_s.strip.presence,
+        address: row["address"].to_s.strip.presence,
+        status: (row["status"].presence || "active").downcase,
+        account_balance: row["opening_balance"].presence ? row["opening_balance"].to_d : 0.to_d
+      }
+
+      if attrs[:party_name].blank?
+        skipped += 1
+        next
+      end
+
+      party = Party.new(attrs)
+      if party.save
+        created += 1
+      else
+        skipped += 1
+      end
+    end
+
+    message = "Imported #{created} party#{'ies' if created != 1}."
+    message += " Skipped #{skipped} row#{'s' if skipped != 1}." if skipped.positive?
+    redirect_to root_path(tab: "parties"), notice: message
+  end
+
+  def template
+    headers = %w[party_name phone address status opening_balance]
+
+    csv = CSV.generate do |csv|
+      csv << headers
+      csv << ["Osaka Dealer", "+1 (234) 567-8900", "Multan Road", "active", "0"]
+    end
+
+    send_data csv, filename: "parties_template.csv"
   end
 
   private

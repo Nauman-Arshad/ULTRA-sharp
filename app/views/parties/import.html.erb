@@ -1,0 +1,37 @@
+<div class="dashboard">
+  <%= render "shared/navbar" %>
+  <div class="dashboard-body">
+    <%= render "shared/sidebar", current_tab: "parties" %>
+    <main class="dashboard-main">
+      <div class="dashboard-card">
+        <div class="page-header">
+          <h1 class="page-title">Import Parties</h1>
+          <%= link_to "Back to Parties", root_path(tab: "parties"), class: "btn-secondary" %>
+        </div>
+
+        <div class="show-card">
+          <p class="form-hint">
+            Upload a CSV file to create multiple parties at once.
+          </p>
+          <p class="form-hint" style="margin-top: 4px;">
+            You can <%= link_to "download the CSV template", template_parties_path(format: :csv), class: "table-link" %> to see the expected columns.
+          </p>
+        </div>
+
+        <div class="show-card" style="margin-top: 20px;">
+          <%= form_with url: import_csv_parties_path, multipart: true, class: "party-form" do |f| %>
+            <div class="form-group">
+              <%= f.label :file, "CSV file" %>
+              <%= f.file_field :file, accept: ".csv", class: "form-input" %>
+            </div>
+            <div class="form-actions">
+              <%= f.submit "Import", class: "btn-primary" %>
+              <%= link_to "Cancel", root_path(tab: "parties"), class: "btn-secondary" %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+

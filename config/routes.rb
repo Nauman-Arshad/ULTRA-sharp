@@ -13,7 +13,13 @@ Rails.application.routes.draw do
 
   root "dashboard#index"
 
-  resources :parties
+  resources :parties do
+    collection do
+      get :import
+      post :import_csv
+      get :template
+    end
+  end
   resources :products
   resources :orders do
     member do
