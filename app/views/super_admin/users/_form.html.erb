@@ -1,0 +1,36 @@
+<%= form_with model: user, url: user.persisted? ? super_admin_user_path(user) : super_admin_users_path, method: user.persisted? ? :patch : :post, class: "party-form" do |f| %>
+  <% if user.errors.any? %>
+    <div class="form-errors">
+      <ul>
+        <% user.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="form-group">
+    <%= f.label :username, "Username" %>
+    <%= f.text_field :username, class: "form-input", placeholder: "Username", autofocus: true %>
+  </div>
+  <div class="form-group">
+    <%= f.label :email_address, "Email address" %>
+    <%= f.email_field :email_address, class: "form-input", placeholder: "email@example.com" %>
+  </div>
+  <div class="form-group">
+    <%= f.label :password, "Password" %>
+    <%= f.password_field :password, class: "form-input", placeholder: user.persisted? ? "Leave blank to keep current" : "Password" %>
+  </div>
+  <div class="form-group">
+    <%= f.label :password_confirmation, "Confirm password" %>
+    <%= f.password_field :password_confirmation, class: "form-input", placeholder: "Confirm password" %>
+  </div>
+  <div class="form-group">
+    <%= f.label :role, "Role" %>
+    <%= f.select :role, options_for_select(User::ROLES.map { |r| [r.capitalize, r] }, user.role), {}, class: "form-select" %>
+  </div>
+  <div class="form-actions">
+    <%= f.submit class: "btn-primary" %>
+    <%= link_to "Cancel", super_admin_users_path, class: "btn-secondary" %>
+  </div>
+<% end %>

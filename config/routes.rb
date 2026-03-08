@@ -13,6 +13,10 @@ Rails.application.routes.draw do
 
   root "dashboard#index"
 
+  namespace :super_admin do
+    resources :users
+  end
+
   resources :parties do
     collection do
       get :import

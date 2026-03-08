@@ -62,11 +62,11 @@ class PartiesController < ApplicationController
   end
 
   def new
-    @party = Party.new
+    @party = Party.new(user: Current.user)
   end
 
   def create
-    @party = Party.new(party_params)
+    @party = Party.new(party_params.merge(user: Current.user))
     if @party.save
       redirect_to @party, notice: "Party was successfully created."
     else
@@ -118,7 +118,7 @@ class PartiesController < ApplicationController
         next
       end
 
-      party = Party.new(attrs)
+      party = Party.new(attrs.merge(user: Current.user))
       if party.save
         created += 1
       else
@@ -145,7 +145,7 @@ class PartiesController < ApplicationController
   private
 
   def set_party
-    @party = Party.find(params[:id])
+    @party = Party.for_user(Current.user).find(params[:id])
   end
 
   def party_params

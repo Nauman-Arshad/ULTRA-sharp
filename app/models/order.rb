@@ -3,6 +3,8 @@
 class Order < ApplicationRecord
   belongs_to :party
   has_many :order_items, dependent: :destroy
+
+  scope :for_user, ->(u) { u&.superadmin? ? all : joins(:party).where(parties: { user_id: u&.id }) }
   has_many :payments, dependent: :destroy
 
   accepts_nested_attributes_for :order_items, allow_destroy: true, reject_if: proc { |a| a[:product_id].blank? && a[:quantity].to_s.blank? }

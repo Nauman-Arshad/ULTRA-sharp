@@ -19,8 +19,8 @@ class OrdersController < ApplicationController
   def new
     @order = Order.new(order_date: Date.current)
     @order.order_items.build
-    @parties = Party.order(:party_name)
-    @products = Product.order(:name)
+    @parties = Party.for_user(Current.user).order(:party_name)
+    @products = Product.for_user(Current.user).order(:name)
   end
 
   def create
@@ -30,16 +30,16 @@ class OrdersController < ApplicationController
     if @order.save
       redirect_to @order, notice: "Order was successfully created."
     else
-      @parties = Party.order(:party_name)
-      @products = Product.order(:name)
+      @parties = Party.for_user(Current.user).order(:party_name)
+      @products = Product.for_user(Current.user).order(:name)
       @order.order_items.build if @order.order_items.empty?
       render :new, status: :unprocessable_entity
     end
   end
 
   def edit
-    @parties = Party.order(:party_name)
-    @products = Product.order(:name)
+    @parties = Party.for_user(Current.user).order(:party_name)
+    @products = Product.for_user(Current.user).order(:name)
     @order.order_items.build if @order.order_items.empty?
   end
 
@@ -47,8 +47,8 @@ class OrdersController < ApplicationController
     if @order.update(order_params)
       redirect_to @order, notice: "Order was successfully updated."
     else
-      @parties = Party.order(:party_name)
-      @products = Product.order(:name)
+      @parties = Party.for_user(Current.user).order(:party_name)
+      @products = Product.for_user(Current.user).order(:name)
       render :edit, status: :unprocessable_entity
     end
   end
@@ -61,7 +61,7 @@ class OrdersController < ApplicationController
   private
 
   def set_order
-    @order = Order.find(params[:id])
+    @order = Order.for_user(Current.user).find(params[:id])
   end
 
   def order_params
@@ -70,6 +70,10 @@ class OrdersController < ApplicationController
       order_items_attributes: %i[id product_id product_name quantity unit_price _destroy]
     )
     permitted[:advance_payment] = 0 unless params[:advance_enabled] == "1"
+    allowed_party_ids = Party.for_user(Current.user).pluck(:id)
+    permitted[:party_id] = nil unless permitted[:party_id].to_s.in?(allowed_party_ids.map(&:to_s))
+    allowed_product_ids = Product.for_user(Current.user).pluck(:id).map(&:to_s)
+    permitted[:order_items_attributes]&.each { |_, attrs| attrs[:product_id] = nil unless attrs[:product_id].to_s.in?(allowed_product_ids) }
     permitted
   end
 end

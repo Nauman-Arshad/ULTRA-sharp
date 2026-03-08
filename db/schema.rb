@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_27_121000) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_27_150000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -49,7 +49,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_27_121000) do
     t.string "phone"
     t.string "status"
     t.datetime "updated_at", null: false
-    t.index ["phone"], name: "index_parties_on_phone", unique: true, where: "(phone IS NOT NULL)"
+    t.bigint "user_id", null: false
+    t.index ["user_id", "phone"], name: "index_parties_on_user_id_and_phone", unique: true, where: "(phone IS NOT NULL)"
+    t.index ["user_id"], name: "index_parties_on_user_id"
   end
 
   create_table "payments", force: :cascade do |t|
@@ -68,6 +70,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_27_121000) do
     t.string "name", null: false
     t.decimal "unit_price", precision: 14, scale: 2, default: "0.0", null: false
     t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["user_id"], name: "index_products_on_user_id"
   end
 
   create_table "sessions", force: :cascade do |t|
@@ -83,16 +87,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_27_121000) do
     t.datetime "created_at", null: false
     t.string "email_address", null: false
     t.string "password_digest", null: false
+    t.string "role", default: "admin", null: false
     t.datetime "updated_at", null: false
     t.string "username"
     t.index ["email_address"], name: "index_users_on_email_address", unique: true
+    t.index ["role"], name: "index_users_on_role"
     t.index ["username"], name: "index_users_on_username", unique: true
   end
 
   add_foreign_key "order_items", "orders"
   add_foreign_key "order_items", "products"
   add_foreign_key "orders", "parties"
+  add_foreign_key "parties", "users"
   add_foreign_key "payments", "orders"
   add_foreign_key "payments", "parties"
+  add_foreign_key "products", "users"
   add_foreign_key "sessions", "users"
 end

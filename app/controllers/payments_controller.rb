@@ -12,7 +12,7 @@ class PaymentsController < ApplicationController
 
   def new
     @payment = Payment.new(payment_date: Date.current)
-    @parties = Party.order(:party_name)
+    @parties = Party.for_user(Current.user).order(:party_name)
   end
 
   def create
@@ -20,20 +20,20 @@ class PaymentsController < ApplicationController
     if @payment.save
       redirect_to @payment, notice: "Payment was successfully created."
     else
-      @parties = Party.order(:party_name)
+      @parties = Party.for_user(Current.user).order(:party_name)
       render :new, status: :unprocessable_entity
     end
   end
 
   def edit
-    @parties = Party.order(:party_name)
+    @parties = Party.for_user(Current.user).order(:party_name)
   end
 
   def update
     if @payment.update(payment_params)
       redirect_to @payment, notice: "Payment was successfully updated."
     else
-      @parties = Party.order(:party_name)
+      @parties = Party.for_user(Current.user).order(:party_name)
       render :edit, status: :unprocessable_entity
     end
   end
@@ -46,10 +46,13 @@ class PaymentsController < ApplicationController
   private
 
   def set_payment
-    @payment = Payment.find(params[:id])
+    @payment = Payment.for_user(Current.user).find(params[:id])
   end
 
   def payment_params
-    params.require(:payment).permit(:party_id, :amount, :payment_date)
+    permitted = params.require(:payment).permit(:party_id, :amount, :payment_date)
+    allowed_party_ids = Party.for_user(Current.user).pluck(:id)
+    permitted[:party_id] = nil unless permitted[:party_id].to_s.in?(allowed_party_ids.map(&:to_s))
+    permitted
   end
 end

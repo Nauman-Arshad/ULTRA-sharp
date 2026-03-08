@@ -1,0 +1,44 @@
+<div class="dashboard">
+  <%= render "shared/navbar" %>
+  <div class="dashboard-body">
+    <%= render "shared/sidebar", current_tab: nil %>
+    <main class="dashboard-main">
+      <div class="dashboard-card">
+        <div class="dashboard-table-toolbar">
+          <div>
+            <div class="dashboard-table-title">Manage users</div>
+            <div class="dashboard-table-subtitle">Super admin: create and manage admin users</div>
+          </div>
+          <%= link_to "Add user", new_super_admin_user_path, class: "btn-primary" %>
+        </div>
+        <div class="dashboard-table-wrap">
+          <table class="dashboard-table">
+            <thead>
+              <tr>
+                <th>Username</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @users.each do |user| %>
+                <tr>
+                  <td><%= link_to user.username, edit_super_admin_user_path(user), class: "table-link" %></td>
+                  <td><%= user.email_address %></td>
+                  <td><%= tag.span user.role, class: "status-pill #{user.superadmin? ? 'active' : 'inactive'}" %></td>
+                  <td>
+                    <%= link_to "Edit", edit_super_admin_user_path(user), class: "table-link" %>
+                    <% unless user.id == Current.user.id %>
+                      <%= link_to "Delete", super_admin_user_path(user), data: { turbo_method: :delete, turbo_confirm: "Delete this user? They will no longer be able to sign in." }, class: "table-link", style: "color: var(--color-danger, #dc2626);" %>
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>

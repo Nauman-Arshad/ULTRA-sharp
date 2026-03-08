@@ -4,11 +4,12 @@ class DashboardController < ApplicationController
   def index
     @tab = %w[dashboard parties products orders payments].include?(params[:tab]) ? params[:tab] : "dashboard"
     @query = params[:query].to_s.strip
+    user_scope = Current.user
 
-    @parties = Party.order(created_at: :desc)
-    @payments = Payment.includes(:party, :order).order(payment_date: :desc, created_at: :desc)
-    @orders = Order.includes(:party, :order_items).order(order_date: :desc, created_at: :desc)
-    @products = Product.order(:name)
+    @parties = Party.for_user(user_scope).order(created_at: :desc)
+    @payments = Payment.for_user(user_scope).includes(:party, :order).order(payment_date: :desc, created_at: :desc)
+    @orders = Order.for_user(user_scope).includes(:party, :order_items).order(order_date: :desc, created_at: :desc)
+    @products = Product.for_user(user_scope).order(:name)
 
     if @query.present?
       q = "%#{Party.sanitize_sql_like(@query)}%"
@@ -17,7 +18,7 @@ class DashboardController < ApplicationController
       @orders = @orders.joins(:party).where("orders.order_number ILIKE :q OR orders.product_name ILIKE :q OR parties.party_name ILIKE :q", q: q)
     end
 
-    @outstanding_balance = Party.where("account_balance > 0").sum(:account_balance)
+    @outstanding_balance = @parties.where("account_balance > 0").sum(:account_balance)
 
     if @tab == "dashboard"
       @range = params[:range].presence || "7d"
@@ -42,11 +43,11 @@ class DashboardController < ApplicationController
 
       period = @from_date.beginning_of_day..@to_date.end_of_day
 
-      @parties_total = Party.count
-      @parties_new   = Party.where(created_at: period).count
+      @parties_total = @parties.count
+      @parties_new   = @parties.where(created_at: period).count
 
-      orders_in_period   = Order.where(order_date: @from_date..@to_date)
-      payments_in_period = Payment.where(payment_date: @from_date..@to_date)
+      orders_in_period   = Order.for_user(user_scope).where(order_date: @from_date..@to_date)
+      payments_in_period = Payment.for_user(user_scope).where(payment_date: @from_date..@to_date)
 
       @orders_in_period            = orders_in_period.count
       @orders_pending_in_period    = orders_in_period.where(payment_status: "pending").count
@@ -57,9 +58,9 @@ class DashboardController < ApplicationController
     end
 
     # Latest records combined in one list (for dashboard tab)
-    latest_parties = Party.order(created_at: :desc).limit(10).map { |p| { type: "Party", record: p, created_at: p.created_at } }
-    latest_orders = Order.includes(:party).order(created_at: :desc).limit(10).map { |o| { type: "Order", record: o, created_at: o.created_at } }
-    latest_payments = Payment.includes(:party, :order).order(created_at: :desc).limit(10).map { |p| { type: "Payment", record: p, created_at: p.created_at } }
+    latest_parties = @parties.order(created_at: :desc).limit(10).map { |p| { type: "Party", record: p, created_at: p.created_at } }
+    latest_orders = @orders.includes(:party).order(order_date: :desc, created_at: :desc).limit(10).map { |o| { type: "Order", record: o, created_at: o.created_at } }
+    latest_payments = @payments.includes(:party, :order).order(payment_date: :desc, created_at: :desc).limit(10).map { |p| { type: "Payment", record: p, created_at: p.created_at } }
     @latest_records = (latest_parties + latest_orders + latest_payments).sort_by { |h| -h[:created_at].to_i }.first(20)
   end
 end

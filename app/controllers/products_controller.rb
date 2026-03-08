@@ -11,11 +11,11 @@ class ProductsController < ApplicationController
   end
 
   def new
-    @product = Product.new
+    @product = Product.new(user: Current.user)
   end
 
   def create
-    @product = Product.new(product_params)
+    @product = Product.new(product_params.merge(user: Current.user))
     if @product.save
       redirect_to @product, notice: "Product was successfully created."
     else
@@ -42,7 +42,7 @@ class ProductsController < ApplicationController
   private
 
   def set_product
-    @product = Product.find(params[:id])
+    @product = Product.for_user(Current.user).find(params[:id])
   end
 
   def product_params

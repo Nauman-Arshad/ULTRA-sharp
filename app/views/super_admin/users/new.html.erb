@@ -1,0 +1,17 @@
+<div class="dashboard">
+  <%= render "shared/navbar" %>
+  <div class="dashboard-body">
+    <%= render "shared/sidebar", current_tab: nil %>
+    <main class="dashboard-main">
+      <div class="dashboard-card">
+        <div class="page-header">
+          <h1 class="page-title">Add user</h1>
+          <%= link_to "Back to users", super_admin_users_path, class: "btn-secondary" %>
+        </div>
+        <div class="form-card">
+          <%= render "form", user: @user %>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>

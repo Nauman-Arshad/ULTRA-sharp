@@ -2,6 +2,8 @@ class Payment < ApplicationRecord
   belongs_to :party
   belongs_to :order, optional: true
 
+  scope :for_user, ->(u) { u&.superadmin? ? all : joins(:party).where(parties: { user_id: u&.id }) }
+
   validates :amount, numericality: { greater_than: 0 }, presence: true
   validates :payment_date, presence: true
 
