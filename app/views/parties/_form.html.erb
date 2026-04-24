@@ -18,6 +18,10 @@
     <%= f.text_field :phone, class: "form-input", placeholder: "Phone number" %>
   </div>
   <div class="form-group">
+    <%= f.label :email, "Email" %>
+    <%= f.email_field :email, class: "form-input", placeholder: "email@example.com" %>
+  </div>
+  <div class="form-group">
     <%= f.label :address, "Address" %>
     <%= f.text_area :address, class: "form-input form-textarea", placeholder: "Address", rows: 3 %>
   </div>

@@ -76,6 +76,19 @@
                 <div class="dash-kpi__meta"><%= number_with_delimiter(@parties_new) %> new in this period</div>
               </div>
             </div>
+
+            <% if @overdue_count > 0 %>
+              <%= link_to root_path(tab: "orders", overdue: "1"), class: "dash-kpi dash-kpi--red dash-kpi--clickable" do %>
+                <div class="dash-kpi__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" class="icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                </div>
+                <div class="dash-kpi__body">
+                  <div class="dash-kpi__value"><%= number_with_delimiter(@overdue_count) %></div>
+                  <div class="dash-kpi__label">Overdue orders</div>
+                  <div class="dash-kpi__meta"><%= number_to_currency(@overdue_amount) %> outstanding · 30+ days</div>
+                </div>
+              <% end %>
+            <% end %>
           </div>
         </section>
 
@@ -141,11 +154,11 @@
         <div class="dashboard-table-toolbar">
           <div>
             <div class="dashboard-table-title">All Products</div>
-            <div class="dashboard-table-subtitle"><%= @products.size %> <%= @products.size == 1 ? "product" : "products" %></div>
+            <div class="dashboard-table-subtitle"><%= @pagy_products&.count || 0 %> of <%= @pagy_products&.pages && @pagy_products.pages > 1 ? "#{@pagy_products.count} shown" : "#{@products&.size || 0}" %> <%= (@products&.size || 0) == 1 ? "product" : "products" %></div>
           </div>
           <%= link_to "Add Product", new_product_path, class: "btn-primary" %>
         </div>
-        <% if @products.empty? %>
+        <% if @products.blank? %>
           <p class="dashboard-empty">No products yet. <%= link_to "Add a product", new_product_path, class: "table-link" %> to use in orders.</p>
         <% else %>
           <div class="dashboard-table-wrap">
@@ -166,6 +179,9 @@
               </tbody>
             </table>
           </div>
+          <% if @pagy_products && @pagy_products.pages > 1 %>
+            <div class="pagy-nav-wrap"><%== pagy_nav(@pagy_products) %></div>
+          <% end %>
         <% end %>
       <% end %>
 
@@ -173,15 +189,15 @@
         <div class="dashboard-table-toolbar">
           <div>
             <div class="dashboard-table-title">All Parties</div>
-            <div class="dashboard-table-subtitle"><%= @parties.size %> <%= @parties.size == 1 ? "party" : "parties" %></div>
+            <div class="dashboard-table-subtitle"><%= @pagy_parties&.count || @parties&.size || 0 %> parties</div>
           </div>
-          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <div class="toolbar-actions">
             <%= link_to "Import from CSV", import_parties_path, class: "btn-secondary" %>
             <%= link_to "Add Party", new_party_path, class: "btn-primary" %>
           </div>
         </div>
-        <% if @parties.empty? %>
-          <p style="color: #64748b; padding: 24px 0;">No parties found.</p>
+        <% if @parties.blank? %>
+          <p class="dashboard-empty">No parties found.</p>
         <% else %>
           <div class="dashboard-table-wrap">
             <table class="dashboard-table">
@@ -191,20 +207,33 @@
                   <th>Phone</th>
                   <th>Address</th>
                   <th>Status</th>
+                  <th>Balance</th>
                 </tr>
               </thead>
               <tbody>
                 <% @parties.each do |party| %>
                   <tr>
                     <td><%= link_to party.party_name, party_path(party), class: "table-link" %></td>
-                    <td><%= party.phone %></td>
-                    <td><%= truncate(party.address, length: 40) %></td>
+                    <td><%= party.phone.presence || "—" %></td>
+                    <td><%= truncate(party.address, length: 35) %></td>
                     <td><%= tag.span(party.status.presence || "—", class: "status-pill #{party.status&.downcase == "active" ? "active" : "inactive"}") %></td>
+                    <td class="text-mono">
+                      <% if party.account_balance.to_d > 0 %>
+                        <span class="balance-due">−<%= number_to_currency(party.account_balance) %></span>
+                      <% elsif party.account_balance.to_d < 0 %>
+                        <span class="balance-credit">+<%= number_to_currency(-party.account_balance) %></span>
+                      <% else %>
+                        <span class="balance-zero"><%= number_to_currency(0) %></span>
+                      <% end %>
+                    </td>
                   </tr>
                 <% end %>
               </tbody>
             </table>
           </div>
+          <% if @pagy_parties && @pagy_parties.pages > 1 %>
+            <div class="pagy-nav-wrap"><%== pagy_nav(@pagy_parties) %></div>
+          <% end %>
         <% end %>
       <% end %>
 
@@ -212,12 +241,12 @@
         <div class="dashboard-table-toolbar">
           <div>
             <div class="dashboard-table-title">All Payments</div>
-            <div class="dashboard-table-subtitle"><%= @payments.size %> <%= @payments.size == 1 ? "payment" : "payments" %></div>
+            <div class="dashboard-table-subtitle"><%= @pagy_payments&.count || @payments&.size || 0 %> payments</div>
           </div>
           <%= link_to "Add Payment", new_payment_path, class: "btn-primary" %>
         </div>
-        <% if @payments.empty? %>
-          <p style="color: #64748b; padding: 24px 0;">No payments found.</p>
+        <% if @payments.blank? %>
+          <p class="dashboard-empty">No payments found.</p>
         <% else %>
           <div class="dashboard-table-wrap">
             <table class="dashboard-table">
@@ -227,6 +256,7 @@
                   <th>Order</th>
                   <th>Amount</th>
                   <th>Date</th>
+                  <th>Notes</th>
                 </tr>
               </thead>
               <tbody>
@@ -236,11 +266,15 @@
                     <td><%= payment.order_id.present? ? link_to(payment.order.display_number, order_path(payment.order), class: "table-link") : "—" %></td>
                     <td><%= link_to number_to_currency(payment.amount), payment_path(payment), class: "table-link" %></td>
                     <td><%= payment.payment_date&.strftime("%b %d, %Y") %></td>
+                    <td class="text-muted"><%= truncate(payment.notes, length: 30) %></td>
                   </tr>
                 <% end %>
               </tbody>
             </table>
           </div>
+          <% if @pagy_payments && @pagy_payments.pages > 1 %>
+            <div class="pagy-nav-wrap"><%== pagy_nav(@pagy_payments) %></div>
+          <% end %>
         <% end %>
       <% end %>
 
@@ -248,12 +282,19 @@
         <div class="dashboard-table-toolbar">
           <div>
             <div class="dashboard-table-title">All Orders</div>
-            <div class="dashboard-table-subtitle"><%= @orders.size %> <%= @orders.size == 1 ? "order" : "orders" %></div>
+            <div class="dashboard-table-subtitle"><%= @pagy_orders&.count || @orders&.size || 0 %> orders<%= " · overdue only" if @overdue_filter %></div>
           </div>
-          <%= link_to "Add Order", new_order_path, class: "btn-primary" %>
+          <div class="toolbar-actions">
+            <% if @overdue_filter %>
+              <%= link_to "Show all", root_path(tab: "orders"), class: "btn-secondary" %>
+            <% else %>
+              <%= link_to "Overdue only", root_path(tab: "orders", overdue: "1"), class: "btn-overdue-filter" %>
+            <% end %>
+            <%= link_to "Add Order", new_order_path, class: "btn-primary" %>
+          </div>
         </div>
-        <% if @orders.empty? %>
-          <p style="color: #64748b; padding: 24px 0;">No orders found.</p>
+        <% if @orders.blank? %>
+          <p class="dashboard-empty">No orders found.</p>
         <% else %>
           <div class="dashboard-table-wrap">
             <table class="dashboard-table">
@@ -261,26 +302,33 @@
                 <tr>
                   <th>Order #</th>
                   <th>Party</th>
-                  <th>Product</th>
+                  <th>Items</th>
                   <th>Total</th>
                   <th>Order Status</th>
-                  <th>Payment Status</th>
+                  <th>Payment</th>
                 </tr>
               </thead>
               <tbody>
                 <% @orders.each do |order| %>
                   <tr>
-                    <td><%= link_to order.order_number, order_path(order), class: "table-link" %></td>
+                    <% is_overdue = order.remaining_amount.to_d > 0 && order.order_date.present? && order.order_date <= 30.days.ago.to_date %>
+                    <td>
+                      <%= link_to order.order_number, order_path(order), class: "table-link" %>
+                      <% if is_overdue %><span class="overdue-badge">Overdue</span><% end %>
+                    </td>
                     <td><%= link_to order.party.party_name, party_path(order.party), class: "table-link" %></td>
                     <td><%= order.products_summary %></td>
                     <td><%= number_to_currency(order.total_amount) %></td>
-                    <td><%= order.order_status %></td>
+                    <td><%= tag.span(order.order_status.presence || "—", class: "status-pill order-status-pill order-status--#{order.order_status&.downcase&.gsub('_', '-')}") %></td>
                     <td><%= tag.span(order.payment_status.presence || "—", class: "status-pill #{order.payment_status&.downcase}") %></td>
                   </tr>
                 <% end %>
               </tbody>
             </table>
           </div>
+          <% if @pagy_orders && @pagy_orders.pages > 1 %>
+            <div class="pagy-nav-wrap"><%== pagy_nav(@pagy_orders) %></div>
+          <% end %>
         <% end %>
       <% end %>
     </div>

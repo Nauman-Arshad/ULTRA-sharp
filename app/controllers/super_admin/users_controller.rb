@@ -40,7 +40,7 @@ module SuperAdmin
         return
       end
       if @user.superadmin? && User.superadmins.count <= 1
-        redirect_to super_admin_users_path, alert: "Cannot delete the last superadmin."
+        redirect_to super_admin_users_path, alert: "Cannot delete the last user with superadmin role."
         return
       end
       @user.destroy
@@ -54,19 +54,24 @@ module SuperAdmin
     end
 
     def user_params_for_create
-      p = params.require(:user).permit(:username, :email_address, :password, :password_confirmation, :role)
-      p[:role] = "admin" unless User::ROLES.include?(p[:role])
+      p = params.require(:user).permit(:username, :email_address, :password, :password_confirmation, roles: [])
+      p[:roles] = Array(p[:roles]).reject(&:blank?).uniq
+      p[:roles] = ["admin"] if p[:roles].blank?
+      p[:roles] &= User::ROLES
       p
     end
 
     def user_params_for_update
-      p = params.require(:user).permit(:username, :email_address, :password, :password_confirmation, :role)
+      p = params.require(:user).permit(:username, :email_address, :password, :password_confirmation, roles: [])
       p.delete(:password) if p[:password].blank?
       p.delete(:password_confirmation) if p[:password_confirmation].blank?
-      if @user.superadmin? && User.superadmins.count <= 1 && p[:role] != "superadmin"
-        p[:role] = "superadmin" # prevent demoting last superadmin
+      p[:roles] = Array(p[:roles]).reject(&:blank?).uniq
+      p[:roles] &= User::ROLES
+      # Prevent removing superadmin from the last user who has it
+      if @user.superadmin? && User.superadmins.count <= 1 && !p[:roles].include?("superadmin")
+        p[:roles] |= ["superadmin"]
       end
-      p[:role] = "admin" unless User::ROLES.include?(p[:role])
+      p[:roles] = ["admin"] if p[:roles].blank?
       p
     end
   end

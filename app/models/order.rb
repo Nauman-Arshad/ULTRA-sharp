@@ -32,8 +32,14 @@ class Order < ApplicationRecord
   end
 
   def calculate_totals
-    self.advance_payment = (advance_payment || 0).to_d
-    self.total_amount = order_items.reject(&:marked_for_destruction?).sum { |i| (i.quantity || 0).to_d * (i.unit_price || 0).to_d }
+    self.advance_payment  = (advance_payment || 0).to_d
+    self.discount_percent = (discount_percent || 0).to_d.clamp(0, 100)
+    self.tax_percent      = (tax_percent || 0).to_d.clamp(0, 100)
+
+    subtotal = order_items.reject(&:marked_for_destruction?).sum { |i| (i.quantity || 0).to_d * (i.unit_price || 0).to_d }
+    discount_amount = subtotal * (self.discount_percent / 100)
+    tax_amount      = (subtotal - discount_amount) * (self.tax_percent / 100)
+    self.total_amount    = subtotal - discount_amount + tax_amount
     self.remaining_amount = total_amount - self.advance_payment
 
     if self.advance_payment == 0

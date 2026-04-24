@@ -9,9 +9,14 @@
     </div>
   <% end %>
 
-  <div class="form-group">
+  <div class="form-group form-group--party-combo">
     <%= f.label :party_id, "Party" %>
-    <%= f.collection_select :party_id, @parties, :id, :party_name, { prompt: "Select party" }, class: "form-select" %>
+    <div class="party-combo" id="party_combo">
+      <%= f.hidden_field :party_id, id: "payment_party_id" %>
+      <input type="text" id="party_search" class="form-input party-combo__input" placeholder="Search by name or phone…" autocomplete="off" value="<%= @payment.party&.party_name %>">
+      <span class="party-combo__arrow" aria-hidden="true"></span>
+      <div class="party-dropdown" id="party_dropdown" role="listbox" aria-hidden="true"></div>
+    </div>
   </div>
   <div class="form-group">
     <%= f.label :amount, "Amount" %>
@@ -21,8 +26,63 @@
     <%= f.label :payment_date, "Payment date" %>
     <%= f.date_field :payment_date, class: "form-input" %>
   </div>
+  <div class="form-group">
+    <%= f.label :notes, "Notes (optional)" %>
+    <%= f.text_area :notes, class: "form-input form-textarea", placeholder: "e.g. Cash payment, cheque #123…", rows: 2 %>
+  </div>
   <div class="form-actions">
     <%= f.submit class: "btn-primary" %>
     <%= link_to "Cancel", @payment.persisted? ? payment_path(@payment) : root_path(tab: "payments"), class: "btn-secondary" %>
   </div>
 <% end %>
+
+<script>
+(function() {
+  var partySearch   = document.getElementById('party_search');
+  var partyIdInput  = document.getElementById('payment_party_id');
+  var partyDropdown = document.getElementById('party_dropdown');
+  if (!partySearch || !partyDropdown) return;
+
+  var partiesJson = <%= raw (@parties || []).map { |p| { id: p.id, name: p.party_name.to_s, phone: p.phone.to_s } }.to_json %>;
+
+  function renderDropdown() {
+    var q = partySearch.value.toLowerCase().trim();
+    var list = partiesJson.filter(function(p) {
+      return !q || p.name.toLowerCase().indexOf(q) !== -1 || p.phone.toLowerCase().indexOf(q) !== -1;
+    });
+    partyDropdown.innerHTML = list.slice(0, 10).map(function(p) {
+      return '<div class="party-dropdown__item" role="option" data-id="' + p.id + '" data-name="' + p.name.replace(/"/g, '&quot;') + '">' +
+        p.name + (p.phone ? ' <span class="party-dropdown__meta">' + p.phone + '</span>' : '') + '</div>';
+    }).join('') || '<div class="party-dropdown__empty">No matches</div>';
+    partyDropdown.setAttribute('aria-hidden', 'false');
+    partyDropdown.classList.add('party-dropdown--open');
+  }
+
+  function hideDropdown() {
+    partyDropdown.classList.remove('party-dropdown--open');
+    partyDropdown.setAttribute('aria-hidden', 'true');
+  }
+
+  function selectParty(id, name) {
+    partyIdInput.value = id;
+    partySearch.value  = name;
+    hideDropdown();
+  }
+
+  partySearch.addEventListener('focus', renderDropdown);
+  partySearch.addEventListener('input', renderDropdown);
+  partySearch.addEventListener('blur', function() { setTimeout(hideDropdown, 200); });
+  partySearch.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') { hideDropdown(); return; }
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      var first = partyDropdown.querySelector('.party-dropdown__item');
+      if (first) selectParty(first.getAttribute('data-id'), first.getAttribute('data-name'));
+    }
+  });
+  partyDropdown.addEventListener('mousedown', function(e) {
+    var item = e.target.closest('.party-dropdown__item');
+    if (item) { e.preventDefault(); selectParty(item.getAttribute('data-id'), item.getAttribute('data-name')); }
+  });
+})();
+</script>

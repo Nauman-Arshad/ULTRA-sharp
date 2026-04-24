@@ -5,6 +5,7 @@ class Party < ApplicationRecord
 
   validates :party_name, presence: true
   validates :phone, uniqueness: { scope: :user_id }, allow_blank: true
+  validates :email, format: { with: URI::MailTo::EMAIL_REGEXP }, allow_blank: true
 
   scope :for_user, ->(u) { u&.superadmin? ? all : where(user_id: u&.id) }
 

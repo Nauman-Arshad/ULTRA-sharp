@@ -31,6 +31,12 @@
             <span class="show-label">Payment date</span>
             <span class="show-value"><%= @payment.payment_date&.strftime("%b %d, %Y") %></span>
           </div>
+          <% if @payment.notes.present? %>
+            <div class="show-row">
+              <span class="show-label">Notes</span>
+              <span class="show-value"><%= @payment.notes %></span>
+            </div>
+          <% end %>
         </div>
       </div>
     </main>

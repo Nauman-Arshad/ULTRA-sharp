@@ -1,0 +1,69 @@
+<div class="dashboard">
+  <%= render "shared/navbar" %>
+  <div class="dashboard-body">
+    <%= render "shared/sidebar", current_tab: nil %>
+    <main class="dashboard-main">
+      <div class="dashboard-card">
+        <div class="page-header">
+          <h1 class="page-title">My Profile</h1>
+        </div>
+
+        <div class="profile-sections">
+
+          <%# ── Username ── %>
+          <section class="profile-section">
+            <h2 class="profile-section__title">Account details</h2>
+            <% if flash[:notice] && !flash[:notice].include?("Password") %>
+              <div class="form-success"><%= flash[:notice] %></div>
+            <% end %>
+            <%= form_with url: profile_path, method: :patch, class: "profile-form" do |f| %>
+              <%= hidden_field_tag :change, "details" %>
+              <div class="form-group">
+                <label class="form-label">Username</label>
+                <input type="text" name="username" value="<%= Current.user.username %>" class="form-input" placeholder="Username" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="text" value="<%= Current.user.email_address %>" class="form-input" disabled>
+                <p class="form-hint">Email cannot be changed here.</p>
+              </div>
+              <div class="form-actions">
+                <%= submit_tag "Save changes", class: "btn-primary" %>
+              </div>
+            <% end %>
+          </section>
+
+          <%# ── Password ── %>
+          <section class="profile-section">
+            <h2 class="profile-section__title">Change password</h2>
+            <% if flash[:notice]&.include?("Password") %>
+              <div class="form-success"><%= flash[:notice] %></div>
+            <% end %>
+            <% if flash[:alert] %>
+              <div class="form-errors"><p><%= flash[:alert] %></p></div>
+            <% end %>
+            <%= form_with url: profile_path, method: :patch, class: "profile-form" do |f| %>
+              <%= hidden_field_tag :change, "password" %>
+              <div class="form-group">
+                <label class="form-label">Current password</label>
+                <input type="password" name="current_password" class="form-input" placeholder="Enter current password" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">New password</label>
+                <input type="password" name="password" class="form-input" placeholder="New password" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Confirm new password</label>
+                <input type="password" name="password_confirmation" class="form-input" placeholder="Repeat new password" required>
+              </div>
+              <div class="form-actions">
+                <%= submit_tag "Update password", class: "btn-primary" %>
+              </div>
+            <% end %>
+          </section>
+
+        </div>
+      </div>
+    </main>
+  </div>
+</div>

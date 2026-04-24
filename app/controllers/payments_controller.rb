@@ -50,7 +50,7 @@ class PaymentsController < ApplicationController
   end
 
   def payment_params
-    permitted = params.require(:payment).permit(:party_id, :amount, :payment_date)
+    permitted = params.require(:payment).permit(:party_id, :amount, :payment_date, :notes)
     allowed_party_ids = Party.for_user(Current.user).pluck(:id)
     permitted[:party_id] = nil unless permitted[:party_id].to_s.in?(allowed_party_ids.map(&:to_s))
     permitted

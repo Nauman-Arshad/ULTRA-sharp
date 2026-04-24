@@ -68,9 +68,29 @@
         </tbody>
       </table>
     </div>
-    <div class="order-form__grand-total">
-      <span class="order-form__grand-total-label">Order total (PKR)</span>
-      <span class="order-form__grand-total-value" id="grand_total">—</span>
+    <div class="order-form__totals">
+      <div class="order-form__total-row">
+        <span class="order-form__total-label">Subtotal</span>
+        <span class="order-form__total-value" id="order_subtotal_display">—</span>
+      </div>
+      <div class="order-form__total-row">
+        <label class="order-form__total-label" for="order_discount_percent">Discount %</label>
+        <div class="order-form__total-input-wrap">
+          <%= f.number_field :discount_percent, id: "order_discount_percent", class: "form-input form-input--sm", step: 0.01, min: 0, max: 100, value: @order.discount_percent.to_d %>
+          <span class="order-form__total-value order-form__total-value--discount" id="order_discount_display">—</span>
+        </div>
+      </div>
+      <div class="order-form__total-row">
+        <label class="order-form__total-label" for="order_tax_percent">Tax %</label>
+        <div class="order-form__total-input-wrap">
+          <%= f.number_field :tax_percent, id: "order_tax_percent", class: "form-input form-input--sm", step: 0.01, min: 0, value: @order.tax_percent.to_d %>
+          <span class="order-form__total-value" id="order_tax_display">—</span>
+        </div>
+      </div>
+      <div class="order-form__grand-total">
+        <span class="order-form__grand-total-label">Order total (PKR)</span>
+        <span class="order-form__grand-total-value" id="grand_total">—</span>
+      </div>
     </div>
   </div>
 
@@ -100,6 +120,13 @@
         <%= f.label :order_date, "Order date" %>
         <%= f.date_field :order_date, class: "form-input" %>
       </div>
+    </div>
+  </div>
+
+  <div class="order-form__section">
+    <h3 class="order-form__section-title">Notes</h3>
+    <div class="form-group">
+      <%= f.text_area :notes, class: "form-input form-textarea", placeholder: "Delivery instructions, customer requirements, follow-up notes…", rows: 3 %>
     </div>
   </div>
 
@@ -204,14 +231,28 @@
   }
 
   function updateGrandTotal() {
-    var total = 0;
+    var subtotal = 0;
     tbody.querySelectorAll('.order-item-row:not(.order-item-row--destroy)').forEach(function(row) {
       var qty = parseFloat(row.querySelector('.input-qty') && row.querySelector('.input-qty').value) || 0;
       var up = parseFloat(row.querySelector('.input-unit-price') && row.querySelector('.input-unit-price').value) || 0;
-      total += qty * up;
+      subtotal += qty * up;
     });
+
+    var discountPct = parseFloat(form.querySelector('#order_discount_percent') && form.querySelector('#order_discount_percent').value) || 0;
+    var taxPct      = parseFloat(form.querySelector('#order_tax_percent') && form.querySelector('#order_tax_percent').value) || 0;
+    var discountAmt = subtotal * (discountPct / 100);
+    var taxAmt      = (subtotal - discountAmt) * (taxPct / 100);
+    var total       = subtotal - discountAmt + taxAmt;
+
+    var fmt = function(n) { return n.toLocaleString('en-PK', { minimumFractionDigits: 2 }); };
+    var sub = form.querySelector('#order_subtotal_display');
+    if (sub) sub.textContent = subtotal > 0 ? fmt(subtotal) : '—';
+    var disc = form.querySelector('#order_discount_display');
+    if (disc) disc.textContent = discountAmt > 0 ? '−' + fmt(discountAmt) : '—';
+    var tax = form.querySelector('#order_tax_display');
+    if (tax) tax.textContent = taxAmt > 0 ? '+' + fmt(taxAmt) : '—';
     var el = form.querySelector('#grand_total');
-    if (el) el.textContent = total > 0 ? total.toLocaleString('en-PK', { minimumFractionDigits: 2 }) : '—';
+    if (el) el.textContent = total > 0 ? fmt(total) : '—';
   }
 
   tbody.addEventListener('change', function(e) {
@@ -264,6 +305,11 @@
 
   tbody.querySelectorAll('.order-item-row').forEach(function(row) {
     updateLineRow(row);
+  });
+
+  ['#order_discount_percent', '#order_tax_percent'].forEach(function(sel) {
+    var inp = form.querySelector(sel);
+    if (inp) inp.addEventListener('input', updateGrandTotal);
   });
 
   // Advance payment toggle

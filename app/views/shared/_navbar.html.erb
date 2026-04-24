@@ -1,12 +1,14 @@
 <header class="dashboard-navbar">
   <div class="navbar-brand">
-    <span class="navbar-brand-icon"><%= render "shared/icon_brand" %></span>
-    <%= link_to "ULTRA Sharp", root_path, class: "navbar-brand-text" %>
+    <%= link_to root_path, class: "navbar-brand-logo-link" do %>
+      <%= image_tag "logo.png", alt: "Ultra Sharp", class: "navbar-logo" %>
+    <% end %>
   </div>
   <div class="navbar-actions">
     <% if Current.user&.superadmin? %>
       <%= link_to "Manage users", super_admin_users_path, class: "navbar-link" %>
     <% end %>
+    <%= link_to Current.user&.username.presence || "Profile", edit_profile_path, class: "navbar-link" %>
     <%= link_to "Sign out", session_path, data: { turbo_method: :delete }, class: "navbar-sign-out" %>
   </div>
 </header>

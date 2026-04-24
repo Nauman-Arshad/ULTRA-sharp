@@ -67,6 +67,7 @@ class OrdersController < ApplicationController
   def order_params
     permitted = params.require(:order).permit(
       :party_id, :advance_payment, :order_date, :order_status, :order_number,
+      :discount_percent, :tax_percent, :notes,
       order_items_attributes: %i[id product_id product_name quantity unit_price _destroy]
     )
     permitted[:advance_payment] = 0 unless params[:advance_enabled] == "1"

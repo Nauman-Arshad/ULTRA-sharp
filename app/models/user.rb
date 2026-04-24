@@ -10,15 +10,29 @@ class User < ApplicationRecord
   normalizes :username, with: ->(u) { u&.strip&.downcase }
 
   validates :username, presence: true, uniqueness: true
-  validates :role, inclusion: { in: ROLES }
+  validate :roles_must_be_allowed
+
+  before_validation :normalize_roles
 
   def superadmin?
-    role == "superadmin"
+    roles.include?("superadmin")
   end
 
   def admin?
-    role == "admin"
+    roles.include?("admin")
   end
 
-  scope :superadmins, -> { where(role: "superadmin") }
+  scope :superadmins, -> { where("? = ANY(roles)", "superadmin") }
+
+  private
+
+  def normalize_roles
+    self.roles = Array(roles).reject(&:blank?).uniq
+  end
+
+  def roles_must_be_allowed
+    return if roles.blank?
+    invalid = roles.reject { |r| ROLES.include?(r) }
+    errors.add(:roles, "contains invalid role(s): #{invalid.uniq.join(", ")}") if invalid.any?
+  end
 end

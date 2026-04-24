@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_27_150000) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_25_000004) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -30,12 +30,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_27_150000) do
   create_table "orders", force: :cascade do |t|
     t.decimal "advance_payment", precision: 14, scale: 2
     t.datetime "created_at", null: false
+    t.decimal "discount_percent", precision: 5, scale: 2, default: "0.0", null: false
+    t.text "notes"
     t.date "order_date"
     t.string "order_number"
     t.string "order_status"
     t.bigint "party_id", null: false
     t.string "payment_status"
     t.decimal "remaining_amount", precision: 14, scale: 2
+    t.decimal "tax_percent", precision: 5, scale: 2, default: "0.0", null: false
     t.decimal "total_amount", precision: 14, scale: 2
     t.datetime "updated_at", null: false
     t.index ["party_id"], name: "index_orders_on_party_id"
@@ -45,6 +48,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_27_150000) do
     t.decimal "account_balance", precision: 14, scale: 2, default: "0.0", null: false
     t.text "address"
     t.datetime "created_at", null: false
+    t.string "email"
     t.string "party_name"
     t.string "phone"
     t.string "status"
@@ -57,6 +61,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_27_150000) do
   create_table "payments", force: :cascade do |t|
     t.decimal "amount", precision: 14, scale: 2
     t.datetime "created_at", null: false
+    t.text "notes"
     t.bigint "order_id"
     t.bigint "party_id", null: false
     t.date "payment_date"
@@ -87,11 +92,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_27_150000) do
     t.datetime "created_at", null: false
     t.string "email_address", null: false
     t.string "password_digest", null: false
-    t.string "role", default: "admin", null: false
+    t.string "roles", default: [], null: false, array: true
     t.datetime "updated_at", null: false
     t.string "username"
     t.index ["email_address"], name: "index_users_on_email_address", unique: true
-    t.index ["role"], name: "index_users_on_role"
+    t.index ["roles"], name: "index_users_on_roles", using: :gin
     t.index ["username"], name: "index_users_on_username", unique: true
   end
 

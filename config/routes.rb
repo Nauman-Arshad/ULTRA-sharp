@@ -12,6 +12,7 @@ Rails.application.routes.draw do
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
   root "dashboard#index"
+  resource :profile, only: %i[edit update]
 
   namespace :super_admin do
     resources :users

@@ -4,6 +4,9 @@
     <%= render "shared/sidebar", current_tab: "parties" %>
     <main class="dashboard-main">
       <div class="dashboard-card">
+        <nav class="breadcrumbs">
+          <%= link_to "Parties", root_path(tab: "parties") %> / <span><%= @party.party_name %></span>
+        </nav>
         <div class="page-header">
           <h1 class="page-title"><%= @party.party_name %></h1>
           <div style="display: flex; gap: 12px; flex-wrap: wrap;">
@@ -29,6 +32,10 @@
           <div class="show-row">
             <span class="show-label">Phone</span>
             <span class="show-value"><%= @party.phone.presence || "—" %></span>
+          </div>
+          <div class="show-row">
+            <span class="show-label">Email</span>
+            <span class="show-value"><%= @party.email.present? ? mail_to(@party.email, @party.email, class: "table-link") : "—" %></span>
           </div>
           <div class="show-row">
             <span class="show-label">Address</span>

@@ -17,7 +17,7 @@
               <tr>
                 <th>Username</th>
                 <th>Email</th>
-                <th>Role</th>
+                <th>Roles</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -26,7 +26,12 @@
                 <tr>
                   <td><%= link_to user.username, edit_super_admin_user_path(user), class: "table-link" %></td>
                   <td><%= user.email_address %></td>
-                  <td><%= tag.span user.role, class: "status-pill #{user.superadmin? ? 'active' : 'inactive'}" %></td>
+                  <td>
+                    <% Array(user.roles).each do |role| %>
+                      <%= tag.span role.capitalize, class: "status-pill #{role == 'superadmin' ? 'active' : 'inactive'}" %>
+                    <% end %>
+                    <%= tag.span "—", class: "text-muted" if user.roles.blank? %>
+                  </td>
                   <td>
                     <%= link_to "Edit", edit_super_admin_user_path(user), class: "table-link" %>
                     <% unless user.id == Current.user.id %>
